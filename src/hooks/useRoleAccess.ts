@@ -3,32 +3,46 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { toast } from 'react-hot-toast'; // You'll need to install this package
+import { toast } from 'react-hot-toast';
 
+// Hook to check if user has developer role
 export function useDeveloperAccess() {
-  const { user, profile, isLoading } = useAuth();
+  const { user, isRole, isLoading } = useAuth();
   const router = useRouter();
   
   useEffect(() => {
-    if (!isLoading && (!user || profile?.role !== 'developer')) {
-      toast.error('Access denied. Developer role required.');
-      router.replace('/login');
+    // Only redirect after loading is complete
+    if (!isLoading) {
+      if (!user) {
+        toast.error('Please login to access this page');
+        router.replace('/login');
+      } else if (!isRole('developer')) {
+        toast.error('Developers only: Access denied');
+        router.replace('/evaluate'); // Redirect evaluators to their page
+      }
     }
-  }, [user, profile, isLoading, router]);
+  }, [user, isRole, isLoading, router]);
   
-  return { isAuthorized: !!user && profile?.role === 'developer', isLoading };
+  return { isAuthorized: !!user && isRole('developer'), isLoading };
 }
 
+// Hook to check if user has evaluator role
 export function useEvaluatorAccess() {
-  const { user, profile, isLoading } = useAuth();
+  const { user, isRole, isLoading } = useAuth();
   const router = useRouter();
   
   useEffect(() => {
-    if (!isLoading && (!user || profile?.role !== 'evaluator')) {
-      toast.error('Access denied. Evaluator role required.');
-      router.replace('/login');
+    // Only redirect after loading is complete
+    if (!isLoading) {
+      if (!user) {
+        toast.error('Please login to access this page');
+        router.replace('/login');
+      } else if (!isRole('evaluator')) {
+        toast.error('Evaluators only: Access denied');
+        router.replace('/submit'); // Redirect developers to their page
+      }
     }
-  }, [user, profile, isLoading, router]);
+  }, [user, isRole, isLoading, router]);
   
-  return { isAuthorized: !!user && profile?.role === 'evaluator', isLoading };
+  return { isAuthorized: !!user && isRole('evaluator'), isLoading };
 }
