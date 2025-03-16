@@ -91,6 +91,21 @@ export default function EvaluatePage() {
     submission.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
     submission.location.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Add a function to update a submission in the UI
+  const handleSubmissionUpdate = (updatedSubmission: DeveloperSubmission) => {
+    // Update the submission in the submissions array
+    setSubmissions(prev =>
+      prev.map(sub => 
+        sub.id === updatedSubmission.id ? updatedSubmission : sub
+      )
+    );
+    
+    // Also update selectedSubmission if it's the same one
+    if (selectedSubmission?.id === updatedSubmission.id) {
+      setSelectedSubmission(updatedSubmission);
+    }
+  };
   
   // Show loading state
   if (authLoading || (isLoading && submissions.length === 0)) {
@@ -148,6 +163,7 @@ export default function EvaluatePage() {
             <EvaluationForm 
               submission={selectedSubmission} 
               onClose={() => setSelectedSubmission(null)}
+              onUpdate={handleSubmissionUpdate} 
             />
           ) : (
             <div className="bg-white p-6 rounded-lg shadow-md flex flex-col items-center justify-center h-64 text-center">
@@ -157,6 +173,8 @@ export default function EvaluatePage() {
           )}
         </div>
       </div>
+      
+      
     </div>
   );
 }

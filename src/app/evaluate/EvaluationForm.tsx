@@ -10,9 +10,10 @@ import Image from 'next/image';
 interface EvaluationFormProps {
   submission: DeveloperSubmission;
   onClose: () => void;
+  onUpdate?: (updatedSubmission: DeveloperSubmission) => void;
 }
 
-export default function EvaluationForm({ submission, onClose }: EvaluationFormProps) {
+export default function EvaluationForm({ submission, onClose, onUpdate }: EvaluationFormProps) {
   const [feedback, setFeedback] = useState(submission.feedback || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const supabase = createClient();
@@ -106,18 +107,26 @@ export default function EvaluationForm({ submission, onClose }: EvaluationFormPr
     return `/api/storage?action=download&bucket=${parsedUrl.bucket}&path=${encodeURIComponent(parsedUrl.path)}`;
   };
 
-  // Handle submission of feedback and decision
+  // Update the handleSubmit function to update the UI immediately:
   const handleSubmit = async (decision: 'accepted' | 'rejected') => {
     try {
       setIsSubmitting(true);
 
-      // Update the submission with feedback and decision status
+      // Create updated submission object
+      const updatedSubmission = {
+        ...submission,
+        feedback,
+        status: decision,
+        updated_at: new Date().toISOString()
+      };
+
+      // Update the submission in the database
       const { error } = await supabase
         .from('submissions')
         .update({
           feedback,
           status: decision,
-          updated_at: new Date().toISOString()
+          updated_at: updatedSubmission.updated_at
         })
         .eq('id', submission.id);
 
@@ -125,9 +134,15 @@ export default function EvaluationForm({ submission, onClose }: EvaluationFormPr
         throw new Error(error.message);
       }
 
+      // Show success message
       toast.success(`Candidate ${decision === 'accepted' ? 'accepted' : 'rejected'} successfully`);
-      onClose(); // Close the form after successful submission
-    } catch (err: any) {
+      
+      // Update the UI immediately by calling the onUpdate function
+      onUpdate && onUpdate(updatedSubmission);
+      
+      // Close the form
+      onClose();
+    } catch (err) {
       console.error('Error updating submission:', err);
       toast.error('Failed to update submission');
     } finally {
