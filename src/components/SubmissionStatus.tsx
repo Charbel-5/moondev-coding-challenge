@@ -1,83 +1,137 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import { SubmissionResponse } from '@/types/submission';
-import { FiCheckCircle, FiClock, FiThumbsUp, FiThumbsDown } from 'react-icons/fi';
+import Image from 'next/image';
+import { FiCheckCircle, FiClock, FiThumbsUp, FiThumbsDown, FiDownload } from 'react-icons/fi';
 
 interface SubmissionStatusProps {
   submission: SubmissionResponse;
 }
 
 export default function SubmissionStatus({ submission }: SubmissionStatusProps) {
-  const renderStatusCard = () => {
-    switch (submission.status) {
-      case 'pending':
-        return (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-            <div className="flex items-center">
-              <FiClock className="text-yellow-500 w-8 h-8 mr-4" />
-              <div>
-                <h3 className="font-bold text-lg text-yellow-700">Under Review</h3>
-                <p className="text-yellow-600">
-                  Your submission is being evaluated by our team. We'll provide feedback soon.
-                </p>
-              </div>
-            </div>
-          </div>
-        );
-      case 'accepted':
-        return (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-6">
-            <div className="flex items-center">
-              <FiThumbsUp className="text-green-500 w-8 h-8 mr-4" />
-              <div>
-                <h3 className="font-bold text-lg text-green-700">Welcome to the Team!</h3>
-                <p className="text-green-600">
-                  We're excited to have you join us. Our team will contact you with next steps.
-                </p>
-                {submission.feedback && (
-                  <div className="mt-4 p-3 bg-white rounded-md">
-                    <p className="font-medium text-sm text-gray-500">Feedback from evaluator:</p>
-                    <p className="text-gray-700">{submission.feedback}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        );
-      case 'rejected':
-        return (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-            <div className="flex items-center">
-              <FiThumbsDown className="text-red-500 w-8 h-8 mr-4" />
-              <div>
-                <h3 className="font-bold text-lg text-red-700">We Are Sorry</h3>
-                <p className="text-red-600">
-                  Unfortunately, we won't be moving forward with your application at this time.
-                </p>
-                {submission.feedback && (
-                  <div className="mt-4 p-3 bg-white rounded-md">
-                    <p className="font-medium text-sm text-gray-500">Feedback from evaluator:</p>
-                    <p className="text-gray-700">{submission.feedback}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        );
-      default:
-        return (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-            <div className="flex items-center">
-              <FiCheckCircle className="text-blue-500 w-8 h-8 mr-4" />
-              <div>
-                <h3 className="font-bold text-lg text-blue-700">Submission Received</h3>
-                <p className="text-blue-600">
-                  Your application has been submitted successfully.
-                </p>
-              </div>
-            </div>
-          </div>
-        );
-    }
-  };
+  const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
+  const [sourceCodeUrl, setSourceCodeUrl] = useState<string | null>(null);
+  const [isLoadingUrls, setIsLoadingUrls] = useState(true);
 
-  return renderStatusCard();
+  // Get signed URLs when component mounts using the API route
+  useEffect(() => {
+    async function fetchUrls() {
+      setIsLoadingUrls(true);
+      
+      try {
+        // Get profile picture URL
+        if (submission.profile_picture) {
+          // Extract bucket and path from URL
+          const parsedUrl = parseStorageUrl(submission.profile_picture);
+          if (parsedUrl) {
+            const response = await fetch(
+              `/api/storage?action=getSignedUrl&bucket=${parsedUrl.bucket}&path=${encodeURIComponent(parsedUrl.path)}`
+            );
+            
+            if (response.ok) {
+              const data = await response.json();
+              setProfileImageUrl(data.signedUrl);
+            } else {
+              console.error('Failed to fetch profile picture URL');
+            }
+          }
+        }
+        
+        // Get source code URL
+        if (submission.source_code) {
+          // Extract bucket and path from URL
+          const parsedUrl = parseStorageUrl(submission.source_code);
+          if (parsedUrl) {
+            const response = await fetch(
+              `/api/storage?action=getSignedUrl&bucket=${parsedUrl.bucket}&path=${encodeURIComponent(parsedUrl.path)}`
+            );
+            
+            if (response.ok) {
+              const data = await response.json();
+              setSourceCodeUrl(data.signedUrl);
+            } else {
+              console.error('Failed to fetch source code URL');
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching signed URLs:', error);
+      } finally {
+        setIsLoadingUrls(false);
+      }
+    }
+    
+    fetchUrls();
+  }, [submission]);
+
+  // Parse Supabase storage URLs to extract bucket and path
+  function parseStorageUrl(url: string): { bucket: string, path: string } | null {
+    try {
+      const urlObj = new URL(url);
+      const pathParts = urlObj.pathname.split('/');
+      
+      // Find the index of 'public' in the path
+      const publicIndex = pathParts.indexOf('public');
+      
+      if (publicIndex !== -1 && publicIndex + 1 < pathParts.length) {
+        return {
+          bucket: pathParts[publicIndex + 1],
+          path: pathParts.slice(publicIndex + 2).join('/')
+        };
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error parsing storage URL:', error);
+      return null;
+    }
+  }
+
+  // Helper function for direct download
+  const getDirectDownloadUrl = (url: string) => {
+    const parsedUrl = parseStorageUrl(url);
+    if (!parsedUrl) return null;
+    
+    return `/api/storage?action=download&bucket=${parsedUrl.bucket}&path=${encodeURIComponent(parsedUrl.path)}`;
+  };
+  
+  return (
+    <div className="bg-white shadow-md rounded-lg p-6">      
+      {/* Display feedback & status if available */}
+      <div>
+        <h1 className="text-lg font-semibold mb-4">Evaluation Status</h1>
+        
+        <div className={`p-4 rounded-md ${
+          submission.status === 'accepted' ? 'bg-green-50' :
+          submission.status === 'rejected' ? 'bg-red-50' :
+          'bg-gray-50'
+        }`}>
+          <div className="flex items-center mb-3">
+            <span className={`inline-block rounded-full w-3 h-3 mr-2 ${
+              submission.status === 'accepted' ? 'bg-green-500' :
+              submission.status === 'rejected' ? 'bg-red-500' :
+              'bg-yellow-500'
+            }`}></span>
+            <span className="font-medium">
+              {submission.status === 'accepted' ? 'Accepted' :
+               submission.status === 'rejected' ? 'Rejected' :
+               'Pending Review'}
+            </span>
+          </div>
+          
+          {submission.feedback ? (
+            <div>
+              <p className="text-sm text-gray-700 font-medium mb-1">Feedback:</p>
+              <p className="text-sm text-gray-600">{submission.feedback}</p>
+            </div>
+          ) : (
+            submission.status === 'pending' && (
+              <p className="text-sm text-gray-500 italic">Your submission is waiting for review.</p>
+            )
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }
