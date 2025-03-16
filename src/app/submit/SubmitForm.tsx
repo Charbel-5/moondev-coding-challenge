@@ -1,15 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Formik, Form, Field, ErrorMessage, FormikHelpers } from 'formik';
 import { useDropzone } from 'react-dropzone';
 import { toast } from 'react-hot-toast';
-import { FiUpload, FiX, FiCheck, FiLoader } from 'react-icons/fi';
+import { FiUpload, FiX, FiCheck, FiLoader, FiDownload } from 'react-icons/fi';
 import { submissionSchema } from '@/schemas/submissionSchema';
 import { compressImage } from '@/utils/imageCompression';
 import { SubmissionFormData, SubmissionResponse } from '@/types/submission';
 import { createClient } from '@/utils/supabase/client';
 import Image from 'next/image';
+import { parseStorageUrl } from '@/utils/supabase';
 
 interface SubmitFormProps {
   existingSubmission?: SubmissionResponse;
@@ -17,24 +18,53 @@ interface SubmitFormProps {
 }
 
 export default function SubmitForm({ existingSubmission, onSuccess }: SubmitFormProps) {
-  const [previewUrl, setPreviewUrl] = useState<string | null>(
-    existingSubmission?.profile_picture || null
-  );
+  // Track the existing profile picture and source code urls
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [sourceFileName, setSourceFileName] = useState<string | null>(
     existingSubmission?.source_code 
       ? existingSubmission.source_code.split('/').pop() || null
       : null
   );
   const supabase = createClient();
+  
+  // Use state to track whether initial values are valid
+  const [hasExistingProfilePicture, setHasExistingProfilePicture] = useState<boolean>(!!existingSubmission?.profile_picture);
+  const [hasExistingSourceCode, setHasExistingSourceCode] = useState<boolean>(!!existingSubmission?.source_code);
+  
+  // When component mounts, fetch signed URLs if there are existing files
+  useEffect(() => {
+    async function fetchSignedUrls() {
+      if (existingSubmission?.profile_picture) {
+        try {
+          const parsed = parseStorageUrl(existingSubmission.profile_picture);
+          if (parsed) {
+            const response = await fetch(
+              `/api/storage?action=getSignedUrl&bucket=${parsed.bucket}&path=${encodeURIComponent(parsed.path)}`
+            );
+            
+            if (response.ok) {
+              const data = await response.json();
+              setPreviewUrl(data.signedUrl);
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching profile picture URL:', error);
+        }
+      }
+    }
+    
+    fetchSignedUrls();
+  }, [existingSubmission?.profile_picture]);
 
+  // Modified initial values to handle existing files
   const initialValues: SubmissionFormData = {
     full_name: existingSubmission?.full_name || '',
     phone: existingSubmission?.phone || '',
     location: existingSubmission?.location || '',
     email: existingSubmission?.email || '',
     hobbies: existingSubmission?.hobbies || '',
-    profile_picture: null,
-    source_code: null,
+    profile_picture: null,  // Will be handled by the validation logic
+    source_code: null,      // Will be handled by the validation logic
   };
 
   const handleSubmit = async (
@@ -51,7 +81,17 @@ export default function SubmitForm({ existingSubmission, onSuccess }: SubmitForm
 
       const userId = userData.user.id;
       
-      // Compress profile picture if provided
+      // Prepare submission data
+      const submissionData: Partial<SubmissionResponse> = {
+        full_name: values.full_name,
+        phone: values.phone,
+        location: values.location,
+        email: values.email,
+        hobbies: values.hobbies,
+        user_id: userId,
+      };
+      
+      // Compress and upload profile picture if a new one is provided
       let profilePictureUrl = existingSubmission?.profile_picture;
       if (values.profile_picture) {
         const compressedImage = await compressImage(values.profile_picture);
@@ -77,10 +117,11 @@ export default function SubmitForm({ existingSubmission, onSuccess }: SubmitForm
           
         profilePictureUrl = publicUrlData.publicUrl;
       }
-
-      // Upload source code if provided
+      
+      // Upload source code if a new one is provided
       let sourceCodeUrl = existingSubmission?.source_code;
       if (values.source_code) {
+        // Upload to Supabase Storage
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('source-code')
           .upload(`${userId}/${Date.now()}-${values.source_code.name}`, values.source_code, {
@@ -101,104 +142,113 @@ export default function SubmitForm({ existingSubmission, onSuccess }: SubmitForm
           
         sourceCodeUrl = publicUrlData.publicUrl;
       }
-
-      // Prepare submission data
-      const submissionData = {
-        full_name: values.full_name,
-        phone: values.phone,
-        location: values.location,
-        email: values.email,
-        hobbies: values.hobbies,
-        profile_picture: profilePictureUrl,
-        source_code: sourceCodeUrl,
-        status: 'pending',
-      };
-
-      let response;
       
-      // Update existing submission or create new one
-      if (existingSubmission) {
-        response = await supabase
-          .from('submissions')
-          .update(submissionData)
-          .eq('id', existingSubmission.id)
-          .select('*')
-          .single();
-      } else {
-        response = await supabase
-          .from('submissions')
-          .insert({
-            ...submissionData,
-            user_id: userId,
-          })
-          .select('*')
-          .single();
+      // Add URLs to submission data if they exist
+      if (profilePictureUrl) {
+        submissionData.profile_picture = profilePictureUrl;
+      }
+      
+      if (sourceCodeUrl) {
+        submissionData.source_code = sourceCodeUrl;
       }
 
-      if (response.error) {
-        toast.error('Failed to save submission');
-        console.error(response.error);
+      // Update or create submission
+      let result;
+      if (existingSubmission) {
+        result = await supabase
+          .from('submissions')
+          .update(submissionData)
+          .eq('user_id', userId);
+      } else {
+        result = await supabase
+          .from('submissions')
+          .insert([submissionData]);
+      }
+
+      if (result.error) {
+        toast.error('Failed to submit application');
+        console.error(result.error);
         return;
       }
 
-      // Success!
-      toast.success(existingSubmission 
-        ? 'Your submission has been updated!' 
-        : 'Your submission has been received!'
-      );
-      
-      if (onSuccess && response.data) {
-        onSuccess(response.data as SubmissionResponse);
+      // Get the updated/created submission
+      const { data: submissionResponse, error: fetchError } = await supabase
+        .from('submissions')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      if (fetchError || !submissionResponse) {
+        toast.error('Failed to retrieve submission details');
+        console.error(fetchError);
+        return;
       }
 
-    } catch (error) {
-      console.error('Submission error:', error);
+      toast.success(existingSubmission ? 'Submission updated successfully' : 'Application submitted successfully');
+      
+      if (onSuccess) {
+        onSuccess(submissionResponse as SubmissionResponse);
+      }
+
+      resetForm();
+    } catch (err) {
+      console.error('Unexpected error:', err);
       toast.error('An unexpected error occurred');
     } finally {
       setSubmitting(false);
     }
   };
 
+  // Custom component for image dropzone that shows preview
   const ImageDropzone = ({ field, form }: any) => {
     const { getRootProps, getInputProps } = useDropzone({
       accept: {
-        'image/*': ['.jpeg', '.jpg', '.png', '.gif', '.webp'],
+        'image/*': ['.jpg', '.jpeg', '.png', '.gif']
       },
       maxSize: 10 * 1024 * 1024, // 10MB
-      onDrop: async (acceptedFiles) => {
+      onDrop: (acceptedFiles) => {
         if (acceptedFiles.length > 0) {
           const file = acceptedFiles[0];
           form.setFieldValue(field.name, file);
           
-          // Generate preview
+          // Create a preview URL
           const objectUrl = URL.createObjectURL(file);
           setPreviewUrl(objectUrl);
+          setHasExistingProfilePicture(false);
+          
+          return () => URL.revokeObjectURL(objectUrl);
         }
+      },
+      onDropRejected: (fileRejections) => {
+        const error = fileRejections[0]?.errors[0]?.message || 'Invalid file';
+        form.setFieldError(field.name, error);
+        toast.error(`Image upload failed: ${error}`);
       },
     });
 
     return (
       <div className="mt-1">
         {previewUrl ? (
-          <div className="relative mb-4">
-            <div className="aspect-square w-40 h-40 rounded-lg overflow-hidden relative">
+          <div className="relative">
+            <div className="aspect-square w-40 h-40 rounded-lg overflow-hidden relative mb-2">
               <Image 
                 src={previewUrl} 
                 alt="Profile preview" 
-                fill
-                className="object-cover"
+                fill 
+                className="object-cover" 
               />
             </div>
             <button
               type="button"
               onClick={() => {
-                setPreviewUrl(null);
                 form.setFieldValue(field.name, null);
+                setPreviewUrl(null);
+                setHasExistingProfilePicture(false);
               }}
-              className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1"
+              className="bg-red-500 hover:bg-red-600 text-white p-1 rounded-full absolute top-2 right-2"
               aria-label="Remove image"
             >
-              <FiX size={16} />
+              <FiX size={18} />
             </button>
           </div>
         ) : (
@@ -213,8 +263,13 @@ export default function SubmitForm({ existingSubmission, onSuccess }: SubmitForm
                 Drag & drop your profile picture here, or click to select
               </p>
               <p className="text-xs text-gray-400 mt-1">
-                JPG, PNG, WebP, GIF up to 10MB
+                JPEG, PNG or GIF up to 10MB
               </p>
+              {hasExistingProfilePicture && (
+                <p className="text-blue-500 mt-2">
+                  You already uploaded a profile picture
+                </p>
+              )}
             </div>
           </div>
         )}
@@ -222,11 +277,12 @@ export default function SubmitForm({ existingSubmission, onSuccess }: SubmitForm
     );
   };
 
+  // Custom component for source code dropzone
   const SourceCodeDropzone = ({ field, form }: any) => {
     const { getRootProps, getInputProps } = useDropzone({
       accept: {
         'application/zip': ['.zip'],
-        'application/x-zip-compressed': ['.zip'],
+        'application/x-zip-compressed': ['.zip']
       },
       maxSize: 10 * 1024 * 1024, // 10MB
       onDrop: (acceptedFiles) => {
@@ -234,24 +290,32 @@ export default function SubmitForm({ existingSubmission, onSuccess }: SubmitForm
           const file = acceptedFiles[0];
           form.setFieldValue(field.name, file);
           setSourceFileName(file.name);
+          setHasExistingSourceCode(false);
         }
+      },
+      onDropRejected: (fileRejections) => {
+        const error = fileRejections[0]?.errors[0]?.message || 'Invalid file';
+        form.setFieldError(field.name, error);
+        toast.error(`File upload failed: ${error}`);
       },
     });
 
     return (
       <div className="mt-1">
         {sourceFileName ? (
-          <div className="flex items-center p-3 bg-gray-50 rounded-md mb-4">
-            <div className="flex-grow">
-              <p className="text-sm font-medium">{sourceFileName}</p>
+          <div className="p-4 border border-gray-200 rounded-lg flex justify-between items-center">
+            <div>
+              <p className="font-medium">{sourceFileName}</p>
+              <p className="text-xs text-gray-500">Source code ZIP file</p>
             </div>
             <button
               type="button"
               onClick={() => {
-                setSourceFileName(null);
                 form.setFieldValue(field.name, null);
+                setSourceFileName(null);
+                setHasExistingSourceCode(false);
               }}
-              className="ml-2 text-red-500 hover:text-red-700"
+              className="text-red-500 hover:text-red-700"
               aria-label="Remove file"
             >
               <FiX size={18} />
@@ -271,6 +335,11 @@ export default function SubmitForm({ existingSubmission, onSuccess }: SubmitForm
               <p className="text-xs text-gray-400 mt-1">
                 ZIP file up to 10MB
               </p>
+              {hasExistingSourceCode && (
+                <p className="text-blue-500 mt-2">
+                  You already uploaded your source code
+                </p>
+              )}
             </div>
           </div>
         )}
@@ -280,12 +349,30 @@ export default function SubmitForm({ existingSubmission, onSuccess }: SubmitForm
 
   const buttonText = existingSubmission ? 'Update Submission' : 'Submit Application';
 
-  return (
-    <Formik
-      initialValues={initialValues}
-      validationSchema={submissionSchema}
-      onSubmit={handleSubmit}
-    >
+  // Create a custom validation schema that considers existing files
+  const getValidationSchema = () => {
+    // Create a validation schema based on whether files exist already
+    if (hasExistingProfilePicture && hasExistingSourceCode) {
+      // Both files exist, make both optional
+      return submissionSchema.omit(['profile_picture', 'source_code']);
+    } else if (hasExistingProfilePicture) {
+      // Only profile picture exists
+      return submissionSchema.omit(['profile_picture']);
+    } else if (hasExistingSourceCode) {
+      // Only source code exists
+      return submissionSchema.omit(['source_code']);
+    } else {
+      // No existing files, use original schema
+      return submissionSchema;
+    }
+  };
+
+    return (
+      <Formik
+        initialValues={initialValues}
+        validationSchema={getValidationSchema()}
+        onSubmit={handleSubmit}
+      >
       {({ isSubmitting, errors, touched }) => (
         <Form className="space-y-6">
           <div>
@@ -399,6 +486,11 @@ export default function SubmitForm({ existingSubmission, onSuccess }: SubmitForm
               component="p"
               className="error-message"
             />
+            {hasExistingProfilePicture && (
+              <p className="text-sm text-gray-500 mt-1">
+                You can upload a new image or keep your existing one.
+              </p>
+            )}
           </div>
 
           <div>
@@ -411,6 +503,11 @@ export default function SubmitForm({ existingSubmission, onSuccess }: SubmitForm
               component="p"
               className="error-message"
             />
+            {hasExistingSourceCode && (
+              <p className="text-sm text-gray-500 mt-1">
+                You can upload a new ZIP file or keep your existing one.
+              </p>
+            )}
           </div>
 
           <div>
