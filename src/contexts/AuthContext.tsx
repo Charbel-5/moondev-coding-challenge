@@ -5,6 +5,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { User, Session } from '@supabase/supabase-js';
+import { clearSessionData } from '@/utils/sessionUtils';
 
 type UserRole = 'developer' | 'evaluator';
 
@@ -123,16 +124,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  async function signOut() {
+  // In your AuthContext.tsx file, update the signOut function:
+
+  const signOut = async () => {
     try {
+      setIsLoading(true);
       await supabase.auth.signOut();
-      toast.success('Logged out successfully');
-      router.replace('/login');
+      setUser(null);
+      
+      // Clear session data
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('user');
+        localStorage.removeItem('lastActivity');
+        // Add any other items you want to clear
+      }
     } catch (error) {
       console.error('Error signing out:', error);
-      toast.error('Error signing out');
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
-  }
+  };
 
   function isRole(role: UserRole): boolean {
     return profile?.role === role;

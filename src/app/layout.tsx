@@ -4,6 +4,8 @@ import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { Toaster } from 'react-hot-toast';
+import Navbar from '@/components/Navbar';
+import SessionTimeoutMonitor from '@/components/SessionTimeoutMonitor';
 
 export const metadata: Metadata = {
   title: 'MoonDev Coding Challenge',
@@ -17,10 +19,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${GeistSans.variable} ${GeistMono.variable} min-h-screen`}>
+      <body className={`${GeistSans.variable} ${GeistMono.variable}`}>
         <AuthProvider>
-          <Toaster position="top-right" />
-          {children}
+          <Navbar />
+          <main>
+            {children}
+          </main>
+          <SessionTimeoutMonitor />
+          <Toaster position="bottom-right" />
         </AuthProvider>
       </body>
     </html>
