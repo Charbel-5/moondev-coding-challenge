@@ -20,6 +20,7 @@
     "moondev-march-coding-challenge": "file:",
     "next": "15.2.2",
     "next-client-cookies": "^2.0.1",
+    "node-mailjet": "^6.0.8",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-dropzone": "^14.3.8",

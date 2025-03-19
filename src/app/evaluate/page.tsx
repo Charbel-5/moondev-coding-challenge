@@ -7,6 +7,7 @@ import { DeveloperSubmission } from '@/types/evaluation';
 import EvaluationForm from './EvaluationForm';
 import SubmissionCard from './SubmissionCard';
 import { FiSearch } from 'react-icons/fi';
+import toast from 'react-hot-toast';
 
 export default function EvaluatePage() {
   const { isAuthorized, isLoading: authLoading } = useEvaluatorAccess();
@@ -15,7 +16,11 @@ export default function EvaluatePage() {
   const [selectedSubmission, setSelectedSubmission] = useState<DeveloperSubmission | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  
+  const [submitting, setSubmitting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [feedbackText, setFeedbackText] = useState('');
+  const [submissionId, setSubmissionId] = useState('');
+
   // Fetch all submissions
   useEffect(() => {
     async function fetchSubmissions() {
@@ -106,6 +111,100 @@ export default function EvaluatePage() {
       setSelectedSubmission(updatedSubmission);
     }
   };
+
+  const updateSubmissionWithEmail = async (
+    id: string, 
+    feedback: string, 
+    status: 'accepted' | 'rejected'
+  ) => {
+    setSubmitting(true);
+    
+    try {
+      // First update the submission in the database
+      const { error } = await supabase
+        .from('submissions')
+        .update({ feedback, status })
+        .eq('id', id);
+        
+      if (error) throw error;
+      
+      // Then send the email notification
+      const emailResponse = await fetch('/api/email-notification', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ submissionId: id }),
+      });
+      
+      if (!emailResponse.ok) {
+        const errorData = await emailResponse.json();
+        console.error('Email notification failed:', errorData);
+        toast.error('Submission updated but email notification failed');
+        return;
+      }
+      
+      toast.success(`Submission ${status === 'accepted' ? 'accepted' : 'rejected'} and email sent`);
+    } catch (error) {
+      console.error('Error updating submission:', error);
+      toast.error('Failed to update submission');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  /*const sendEmailNotification = async (submissionId: string) => {
+    try {
+      const response = await fetch('/api/email-notification', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ submissionId }),
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Email notification failed:', errorData);
+        toast.error('Email notification failed to send');
+        return false;
+      }
+  
+      return true;
+    } catch (error) {
+      console.error('Error sending email notification:', error);
+      toast.error('Failed to send email notification');
+      return false;
+    }
+  };
+  */
+  const handleDecision = async (status: 'accepted' | 'rejected') => {
+    setIsSubmitting(true);
+    
+    try {
+      // First update the submission in the database
+      const { error } = await supabase
+        .from('submissions')
+        .update({ 
+          status,
+          feedback: feedbackText,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', submissionId);
+        
+      if (error) throw error;
+      
+      // Then send the email notification
+      //const emailSent = await sendEmailNotification(submissionId);
+      
+      toast.success(`Application ${status === 'accepted' ? 'accepted' : 'rejected'} successfully and email sent`);
+    } catch (error) {
+      console.error('Error updating submission:', error);
+      toast.error('Failed to update submission status');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
   
   // Show loading state
   if (authLoading || (isLoading && submissions.length === 0)) {
@@ -167,14 +266,11 @@ export default function EvaluatePage() {
             />
           ) : (
             <div className="bg-white p-6 rounded-lg shadow-md flex flex-col items-center justify-center h-64 text-center">
-              <p className="text-gray-500 mb-2">Select a candidate to evaluate</p>
-              <p className="text-sm text-gray-400">Click on a submission from the list to view details and provide feedback</p>
+             Please Select a Candidate to Evaluate
             </div>
           )}
         </div>
       </div>
-      
-      
     </div>
   );
 }

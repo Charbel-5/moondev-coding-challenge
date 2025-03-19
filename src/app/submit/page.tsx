@@ -9,6 +9,7 @@ import SubmissionStatus from '@/components/SubmissionStatus';
 import { SubmissionResponse } from '@/types/submission';
 import { FiEdit, FiDownload } from 'react-icons/fi';
 import Image from 'next/image';
+import toast from 'react-hot-toast';
 
 const ProfileImage = ({ url, alt }: { url: string; alt: string }) => {
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
@@ -222,6 +223,56 @@ export default function SubmitPage() {
       )
       .subscribe();
 
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, supabase]);
+
+  useEffect(() => {
+    if (!user) return;
+  
+    // Set up real-time listener for submission updates
+    const channel = supabase
+      .channel('submission-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'submissions',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          // Update your local state with the new data
+          setSubmission(payload.new as SubmissionResponse);
+          
+          // Show notifications based on status changes
+          if (payload.old.status !== payload.new.status) {
+            if (payload.new.status === 'accepted') {
+              toast.success('Congratulations! Your application has been accepted!', {
+                duration: 6000,
+                icon: '🎉',
+              });
+            } else if (payload.new.status === 'rejected') {
+              toast('Thank you for your interest. Your application was not selected.', {
+                duration: 6000,
+                icon: '📝',
+              });
+            }
+          }
+          
+          // Show notification when feedback is updated
+          if (payload.old.feedback !== payload.new.feedback && payload.new.feedback) {
+            toast('New feedback has been received on your submission!', {
+              icon: 'ℹ️',
+              duration: 4000,
+            });
+          }
+        }
+      )
+      .subscribe();
+    
+    // Clean up subscription when component unmounts
     return () => {
       supabase.removeChannel(channel);
     };

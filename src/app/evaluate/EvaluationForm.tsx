@@ -107,48 +107,92 @@ export default function EvaluationForm({ submission, onClose, onUpdate }: Evalua
     return `/api/storage?action=download&bucket=${parsedUrl.bucket}&path=${encodeURIComponent(parsedUrl.path)}`;
   };
 
-  // Update the handleSubmit function to update the UI immediately:
-  const handleSubmit = async (decision: 'accepted' | 'rejected') => {
-    try {
-      setIsSubmitting(true);
+  // Inside your handleSubmit function:
 
-      // Create updated submission object
-      const updatedSubmission = {
-        ...submission,
-        feedback,
+const handleSubmit = async (decision: 'accepted' | 'rejected') => {
+  try {
+    setIsSubmitting(true);
+
+    // Update the submission in the database
+    const { error } = await supabase
+      .from('submissions')
+      .update({
+        feedback: feedback.trim(),
         status: decision,
         updated_at: new Date().toISOString()
-      };
+      })
+      .eq('id', submission.id);
 
-      // Update the submission in the database
-      const { error } = await supabase
-        .from('submissions')
-        .update({
-          feedback,
-          status: decision,
-          updated_at: updatedSubmission.updated_at
-        })
-        .eq('id', submission.id);
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      // Show success message
-      toast.success(`Candidate ${decision === 'accepted' ? 'accepted' : 'rejected'} successfully`);
-      
-      // Update the UI immediately by calling the onUpdate function
-      onUpdate && onUpdate(updatedSubmission);
-      
-      // Close the form
-      onClose();
-    } catch (err) {
-      console.error('Error updating submission:', err);
-      toast.error('Failed to update submission');
-    } finally {
-      setIsSubmitting(false);
+    if (error) {
+      console.error('Database error:', error);
+      throw new Error(`Failed to update: ${error.message}`);
     }
-  };
+
+    // Get the updated submission data to send to the Edge Function
+    const { data: updatedSubmission, error: fetchError } = await supabase
+      .from('submissions')
+      .select('*')
+      .eq('id', submission.id)
+      .single();
+
+    if (fetchError || !updatedSubmission) {
+      console.error('Error fetching updated submission:', fetchError);
+      throw new Error(`Failed to fetch updated submission`);
+    }
+
+    try {
+      // Call the Edge Function with proper payload
+      console.log("Calling Edge Function with payload:", {
+        type: 'UPDATE',
+        table: 'submissions',
+        schema: 'public',
+        record: updatedSubmission,
+        old_record: {
+          status: submission.status,
+          feedback: submission.feedback
+        }
+      });
+      
+      const { data, error: fnError } = await supabase.functions.invoke(
+        'send-notification-email',
+        {
+          body: {
+            type: 'UPDATE',
+            table: 'submissions',
+            schema: 'public',
+            record: updatedSubmission,
+            old_record: {
+              status: submission.status,
+              feedback: submission.feedback
+            }
+          }
+        }
+      );
+
+      if (fnError) {
+        console.error('Edge function error:', fnError);
+        toast.error('Candidate updated but email notification failed');
+      } else {
+        console.log('Edge function response:', data);
+        toast.success(`Candidate ${decision === 'accepted' ? 'accepted' : 'rejected'} successfully and email sent`);
+      }
+    } catch (fnError) {
+      console.error('Error invoking Edge Function:', fnError);
+      toast.error('Candidate updated but email notification failed');
+    }
+    
+    // Update the UI immediately
+    onUpdate && onUpdate(updatedSubmission);
+    
+    // Close the form
+    onClose();
+  } catch (err) {
+    console.error('Error updating submission:', err);
+    toast.error('Failed to update submission');
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   return (
     <div className="bg-white rounded-lg shadow-lg p-6">
@@ -223,8 +267,6 @@ export default function EvaluationForm({ submission, onClose, onUpdate }: Evalua
                 <FiDownload className="mr-2" />
                 Download Source Code
               </a>
-              
-             
             </div>
           ) : (
             <p className="text-gray-500">No source code uploaded</p>
