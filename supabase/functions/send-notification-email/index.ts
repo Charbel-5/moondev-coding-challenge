@@ -37,7 +37,7 @@ serve(async (req: Request) => {
     
     // Skip processing if invalid payload or no status change
     if (!payload?.record?.email || payload.table !== "submissions" || 
-        payload.old_record.status === payload.record.status || 
+        (payload.old_record.status === payload.record.status && payload.old_record.feedback === payload.record.feedback) || 
         payload.record.status === "pending" || !payload.record.status) {
       return new Response(JSON.stringify({ success: true, message: "Skipped processing" }), { status: 200, headers });
     }

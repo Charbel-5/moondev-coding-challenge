@@ -395,9 +395,22 @@ export default function SubmitForm({ existingSubmission, onSuccess }: SubmitForm
       >
       {({ isSubmitting, errors, touched }) => (
         <Form className="bg-white shadow-card rounded-xl p-8 animate-in">
-          <h2 className="text-2xl font-semibold mb-6 text-center">
-            {existingSubmission ? "Update Your Application" : "Developer Application"}
-          </h2>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-semibold text-center">
+              {existingSubmission ? "Update Your Application" : "Developer Application"}
+            </h2>
+            {/* Add close button */}
+            {existingSubmission && (
+              <button 
+                type="button"
+                onClick={() => onSuccess && onSuccess(existingSubmission)}
+                className="text-gray-500 hover:text-gray-700 transition-colors"
+                aria-label="Close form"
+              >
+                <FiX size={24} />
+              </button>
+            )}
+          </div>
           
           {/* Personal Information Section */}
           <div className="mb-8">

@@ -304,6 +304,13 @@ export default function SubmitPage() {
         <SubmitForm
           existingSubmission={submission || undefined}
           onSuccess={(submissionData) => {
+            // If the submission data is unchanged, it means the user clicked the close button
+            if (submissionData === submission) {
+              setIsEditing(false);
+              return;
+            }
+            
+            // Regular submission success handling
             setSubmission(submissionData);
             setIsEditing(false);
             
