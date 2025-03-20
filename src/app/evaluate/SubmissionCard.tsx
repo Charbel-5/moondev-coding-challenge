@@ -78,20 +78,20 @@ export default function SubmissionCard({ submission, isSelected, onClick }: Subm
   const getStatusStyle = () => {
     switch (submission.status) {
       case 'accepted':
-        return 'bg-green-100 text-green-800';
+        return 'status-badge-accepted';
       case 'rejected':
-        return 'bg-red-100 text-red-800';
+        return 'status-badge-rejected';
       default:
-        return 'bg-yellow-100 text-yellow-800';
+        return 'status-badge-pending';
     }
   };
 
   return (
     <div
-      className={`p-4 rounded-lg border transition-all cursor-pointer ${
+      className={`card-hover p-4 rounded-lg border transition-all cursor-pointer ${
         isSelected
-          ? 'border-blue-500 bg-blue-50'
-          : 'border-gray-200 hover:border-blue-300 bg-white'
+          ? 'border-blue-500 bg-blue-50 dark:bg-primary/5'
+          : 'border-gray-200 hover:border-blue-300 bg-white dark:bg-neutral-800 dark:border-neutral-700'
       }`}
       onClick={onClick}
     >
@@ -123,7 +123,7 @@ export default function SubmissionCard({ submission, isSelected, onClick }: Subm
         </div>
         
         {/* Status badge */}
-        <div className={`px-2 py-1 text-xs rounded-full ${getStatusStyle()}`}>
+        <div className={`status-badge ${getStatusStyle()}`}>
           {submission.status?.charAt(0).toUpperCase() + submission.status?.slice(1) || 'Pending'}
         </div>
       </div>

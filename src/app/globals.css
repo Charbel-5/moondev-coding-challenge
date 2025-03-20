@@ -2,50 +2,146 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    /* Color palette - sophisticated neutral with accent colors */
+    --color-primary: 59 130 246; /* Blue */
+    --color-primary-light: 191 219 254; /* Light Blue */
+    --color-secondary: 16 185 129; /* Green */
+    --color-accent: 99 102 241; /* Indigo */
+    --color-neutral-50: 250 250 250;
+    --color-neutral-100: 245 245 245;
+    --color-neutral-200: 229 229 229;
+    --color-neutral-700: 64 64 64;
+    --color-neutral-800: 38 38 38;
+    --color-neutral-900: 23 23 23;
+    --color-error: 239 68 68;
+    --color-success: 34 197 94;
+    
+    /* Effects */
+    --shadow-card: 0 10px 30px -5px rgba(0, 0, 0, 0.05);
+    --shadow-button: 0 2px 5px rgba(0, 0, 0, 0.1);
+    --transition-standard: 0.2s ease-in-out;
+    
+    /* Border radius */
+    --radius-sm: 0.25rem;
+    --radius-md: 0.375rem;
+    --radius-lg: 0.5rem;
+    --radius-xl: 0.75rem;
+  }
+
+  body {
+    @apply bg-neutral-50 text-neutral-900 antialiased;
   }
 }
 
-body {
-  @apply bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100;
-  font-family: var(--font-geist-sans), Arial, sans-serif;
-}
-
-/* Custom utility classes */
 @layer components {
+  /* Enhanced button styles */
   .btn {
-    @apply rounded-full px-4 py-2 font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2;
+    @apply inline-flex items-center justify-center rounded-md font-medium transition-colors 
+    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 
+    disabled:opacity-50 disabled:pointer-events-none;
   }
   
   .btn-primary {
-    @apply bg-primary text-white hover:bg-primary-dark focus:ring-primary;
+    @apply bg-primary text-white hover:bg-primary-600 shadow-button;
   }
   
   .btn-secondary {
-    @apply border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-primary-light;
+    @apply border border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50;
   }
 
+  .btn-error {
+    @apply bg-error text-white hover:bg-error-dark;
+  }
+
+  .btn-success {
+    @apply bg-secondary text-white hover:bg-secondary-dark;
+  }
+
+  /* Form elements with consistent styling */
   .input-field {
-    @apply w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary;
+    @apply w-full rounded-md border border-neutral-300 bg-white px-3 py-2 text-neutral-900 
+    placeholder:text-neutral-400 focus:border-primary focus:outline-none focus:ring-1 
+    focus:ring-primary transition-colors disabled:cursor-not-allowed disabled:opacity-50
+    dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100;
   }
   
   .form-label {
-    @apply mb-1 block text-sm font-medium text-gray-700;
+    @apply mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-200;
   }
   
   .error-message {
     @apply mt-1 text-sm text-error;
   }
 
+  /* Card component with consistent styling */
   .card {
-    @apply rounded-lg bg-white p-6 shadow-md dark:bg-gray-800;
+    @apply rounded-xl bg-white p-6 shadow-card border border-neutral-100 
+    dark:bg-neutral-800 dark:border-neutral-700;
+  }
+  
+  /* Animated transitions */
+  .animate-in {
+    animation: animateIn 0.3s ease-in-out;
+  }
+  
+  .animate-out {
+    animation: animateOut 0.3s ease-in-out;
+  }
+
+  @keyframes animateIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes animateOut {
+    from {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+  }
+  
+  /* Form groups with consistent spacing */
+  .form-group {
+    @apply mb-4;
+  }
+  
+  /* Enhanced dropzone styling */
+  .dropzone {
+    @apply border-2 border-dashed border-neutral-300 rounded-md p-6 text-center 
+    cursor-pointer hover:border-primary transition-colors;
+  }
+  
+  /* Status badges */
+  .status-badge {
+    @apply px-2 py-1 text-xs rounded-full font-medium;
+  }
+  
+  .status-badge-pending {
+    @apply bg-yellow-100 text-yellow-800;
+  }
+  
+  .status-badge-accepted {
+    @apply bg-green-100 text-green-800;
+  }
+  
+  .status-badge-rejected {
+    @apply bg-red-100 text-red-800;
+  }
+  
+  /* Card hover effects */
+  .card-hover {
+    @apply transition-all hover:shadow-lg hover:border-primary/50;
   }
 }

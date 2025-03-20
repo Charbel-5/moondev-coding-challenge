@@ -1,14 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import Link from 'next/link';
-import { Formik, Form, Field, ErrorMessage } from 'formik';
+import { useFormik } from 'formik';
 import * as Yup from 'yup';
-import { FiEye, FiEyeOff, FiLock, FiMail } from 'react-icons/fi';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
+import { toast } from 'react-hot-toast';
+import { FiMail, FiLock, FiUser } from 'react-icons/fi';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card';
+import Input from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
 
-
-const LoginSchema = Yup.object().shape({
+const loginSchema = Yup.object().shape({
   email: Yup.string()
     .email('Invalid email address')
     .required('Email is required'),
@@ -18,150 +21,91 @@ const LoginSchema = Yup.object().shape({
 });
 
 export default function Login() {
-  const { signIn, isLoading } = useAuth();
-  const [showPassword, setShowPassword] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { signIn } = useAuth();
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
-  };
-
-  const handleSubmit = async (values: { email: string; password: string }) => {
-    setIsSubmitting(true);
-    try {
-      await signIn(values.email, values.password);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  const formik = useFormik({
+    initialValues: {
+      email: '',
+      password: '',
+    },
+    validationSchema: loginSchema,
+    onSubmit: async (values) => {
+      setIsLoading(true);
+      try {
+        await signIn(values.email, values.password);
+        //toast.success('Login successful');
+        // The router.push will happen in the AuthContext useEffect
+      } catch (error: any) {
+        console.error('Login error:', error);
+        toast.error(error.message || 'Failed to login');
+      } finally {
+        setIsLoading(false);
+      }
+    },
+  });
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full px-6 py-8 bg-white shadow-lg rounded-lg">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-800">MoonDev Challenge</h1>
-          <p className="text-gray-600 mt-2">Sign in to access your account</p>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-neutral-50 to-neutral-100 dark:from-neutral-900 dark:to-neutral-950 px-4">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-6 animate-in">
+          <div className="w-16 h-16 bg-gradient-to-br from-primary to-secondary rounded-full mx-auto flex items-center justify-center mb-4">
+            <FiUser className="h-8 w-8 text-white" />
+          </div>
+          <h1 className="text-3xl font-bold text-neutral-900 dark:text-white mb-1">Welcome back</h1>
+          <p className="text-neutral-600 dark:text-neutral-400">Sign in to access your account</p>
         </div>
 
-        <Formik
-          initialValues={{ email: '', password: '' }}
-          validationSchema={LoginSchema}
-          onSubmit={handleSubmit}
-        >
-          {({ errors, touched }) => (
-            <Form className="space-y-6">
-              <div>
-                <label htmlFor="email" className="form-label">
-                  Email Address
-                </label>
-                <div className="mt-1 relative rounded-md shadow-sm">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <FiMail className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <Field
-                    id="email"
-                    name="email"
-                    type="email"
-                    className={`input-field pl-10 ${
-                      errors.email && touched.email
-                        ? 'border-red-300 text-red-900 placeholder-red-300 focus:outline-none focus:ring-red-500 focus:border-red-500'
-                        : 'border-gray-300'
-                    }`}
-                    placeholder="you@example.com"
-                  />
-                </div>
-                <ErrorMessage
-                  name="email"
-                  component="div"
-                  className="mt-1 text-sm text-red-600"
-                />
-              </div>
+        <Card>
+          <CardContent className="pt-6">
+            <form onSubmit={formik.handleSubmit} className="space-y-4">
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                label="Email Address"
+                placeholder="you@example.com"
+                icon={<FiMail className="h-5 w-5 text-neutral-400" />}
+                value={formik.values.email}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                error={formik.touched.email ? formik.errors.email : undefined}
+              />
+              
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                label="Password"
+                placeholder="••••••••"
+                icon={<FiLock className="h-5 w-5 text-neutral-400" />}
+                value={formik.values.password}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                error={formik.touched.password ? formik.errors.password : undefined}
+              />
 
-              <div>
-                <label htmlFor="password" className="form-label">
-                  Password
-                </label>
-                <div className="mt-1 relative rounded-md shadow-sm">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <FiLock className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <Field
-                    id="password"
-                    name="password"
-                    type={showPassword ? 'text' : 'password'}
-                    className={`input-field pl-10 pr-10 ${
-                      errors.password && touched.password
-                        ? 'border-red-300 text-red-900 placeholder-red-300 focus:outline-none focus:ring-red-500 focus:border-red-500'
-                        : 'border-gray-300'
-                    }`}
-                    placeholder="••••••••"
-                  />
-                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                    <button
-                      type="button"
-                      onClick={togglePasswordVisibility}
-                      className="text-gray-400 hover:text-gray-500 focus:outline-none"
-                    >
-                      {showPassword ? (
-                        <FiEyeOff className="h-5 w-5" />
-                      ) : (
-                        <FiEye className="h-5 w-5" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-                <ErrorMessage
-                  name="password"
-                  component="div"
-                  className="mt-1 text-sm text-red-600"
-                />
-              </div>
-
-              <div>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
-                >
-                  {isSubmitting ? (
-                    <div className="flex items-center">
-                      <svg
-                        className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        ></circle>
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
-                      </svg>
-                      Signing in...
-                    </div>
-                  ) : (
-                    'Sign in'
-                  )}
-                </button>
-              </div>
-            </Form>
-          )}
-        </Formik>
-
-        <div className="mt-8 text-center">
-          <p className="text-sm text-gray-600">
-            Don&apos;t have an account? Contact the administrator.
-          </p>
-        </div>
+              <Button 
+                type="submit"
+                className="w-full"
+                isLoading={formik.isSubmitting}
+              >
+                Sign In
+              </Button>
+            </form>
+          </CardContent>
+            <CardFooter className="flex flex-col space-y-2">
+            <p className="text-sm text-neutral-500 dark:text-neutral-400 text-center">
+              Don't have an account? Contact an administrator for access.
+            </p>
+            </CardFooter>
+        </Card>
+        
+        <p className="text-center mt-8 text-sm text-neutral-500 dark:text-neutral-400">
+          MoonDev Coding Challenge © {new Date().getFullYear()}
+        </p>
       </div>
-    </main>
+    </div>
   );
 }

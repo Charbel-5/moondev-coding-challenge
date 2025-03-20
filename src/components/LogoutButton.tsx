@@ -2,12 +2,19 @@ import { useRouter } from 'next/navigation';
 import { FiLogOut } from 'react-icons/fi';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'react-hot-toast';
+import { Button } from './ui/Button';
 
 interface LogoutButtonProps {
   className?: string;
+  variant?: "default" | "secondary" | "ghost" | "link" | "success" | "error";
+  size?: "default" | "sm" | "lg" | "icon";
 }
 
-export default function LogoutButton({ className = '' }: LogoutButtonProps) {
+export default function LogoutButton({ 
+  className = '',
+  variant = "ghost",
+  size = "default"
+}: LogoutButtonProps) {
   const router = useRouter();
   const { signOut } = useAuth();
 
@@ -23,13 +30,15 @@ export default function LogoutButton({ className = '' }: LogoutButtonProps) {
   };
 
   return (
-    <button
+    <Button
       onClick={handleLogout}
-      className={`flex items-center px-4 py-2 rounded-md bg-gray-200 hover:bg-gray-300 text-gray-800 transition-colors ${className}`}
+      variant={variant}
+      size={size}
+      className={className}
       aria-label="Logout"
     >
       <FiLogOut className="mr-2" />
       <span>Logout</span>
-    </button>
+    </Button>
   );
 }

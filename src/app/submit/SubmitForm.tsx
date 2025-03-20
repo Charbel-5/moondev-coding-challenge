@@ -254,7 +254,7 @@ export default function SubmitForm({ existingSubmission, onSuccess }: SubmitForm
         ) : (
           <div
             {...getRootProps()}
-            className="border-2 border-dashed border-gray-300 rounded-md p-8 text-center cursor-pointer hover:border-primary transition-colors"
+            className="dropzone flex flex-col items-center justify-center"
           >
             <input {...getInputProps()} id={field.id} data-testid="profile-picture-input" />
             <div className="flex flex-col items-center">
@@ -324,7 +324,7 @@ export default function SubmitForm({ existingSubmission, onSuccess }: SubmitForm
         ) : (
           <div
             {...getRootProps()}
-            className="border-2 border-dashed border-gray-300 rounded-md p-8 text-center cursor-pointer hover:border-primary transition-colors"
+            className="dropzone flex flex-col items-center justify-center"
           >
             <input {...getInputProps()} id={field.id} data-testid="source-code-input" />
             <div className="flex flex-col items-center">
@@ -374,7 +374,7 @@ export default function SubmitForm({ existingSubmission, onSuccess }: SubmitForm
         onSubmit={handleSubmit}
       >
       {({ isSubmitting, errors, touched }) => (
-        <Form className="space-y-6">
+        <Form className="space-y-6 bg-white shadow-card rounded-lg p-6 animate-in">
           <div>
             <label htmlFor="full_name" className="form-label">
               Full Name
@@ -513,20 +513,15 @@ export default function SubmitForm({ existingSubmission, onSuccess }: SubmitForm
           <div>
             <button
               type="submit"
+              className="btn btn-primary w-full h-14 py-3 text-base"
               disabled={isSubmitting}
-              className="btn btn-primary w-full flex justify-center items-center"
             >
               {isSubmitting ? (
-                <>
-                  <FiLoader className="animate-spin mr-2" />
-                  Processing...
-                </>
-              ) : (
-                <>
-                  <FiCheck className="mr-2" />
-                  {buttonText}
-                </>
-              )}
+                <div className="flex items-center">
+                  <div className="mr-3 h-5 w-5 animate-spin rounded-full border-2 border-t-transparent border-white"></div>
+                  <span>Submitting...</span>
+                </div>
+              ) : existingSubmission ? "Update Submission" : "Submit Application"}
             </button>
           </div>
         </Form>

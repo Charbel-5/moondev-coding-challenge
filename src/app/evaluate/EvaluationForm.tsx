@@ -195,7 +195,7 @@ const handleSubmit = async (decision: 'accepted' | 'rejected') => {
 };
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-6">
+    <div className="card p-6 animate-in">
       <div className="flex justify-between items-start mb-6">
         <h2 className="text-xl font-bold">Evaluate {submission.full_name}</h2>
         <button 
@@ -290,21 +290,21 @@ const handleSubmit = async (decision: 'accepted' | 'rejected') => {
       </div>
       
       {/* Decision Buttons */}
-      <div className="flex flex-col sm:flex-row gap-4 justify-end">
+      <div className="flex flex-col sm:flex-row gap-4 justify-end mt-6">
         <button
-          className="flex-1 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-md flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+          className="btn btn-error py-3 text-base flex-1 items-center justify-center h-14"
           onClick={() => handleSubmit('rejected')}
           disabled={isSubmitting}
         >
-          <FiThumbsDown className="mr-2" />
+          <FiThumbsDown className="mr-3 h-5 w-5" />
           We Are Sorry
         </button>
         <button
-          className="flex-1 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-md flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+          className="btn btn-success py-3 text-base flex-1 items-center justify-center h-14"
           onClick={() => handleSubmit('accepted')}
           disabled={isSubmitting}
         >
-          <FiThumbsUp className="mr-2" />
+          <FiThumbsUp className="mr-3 h-5 w-5" />
           Welcome to the Team
         </button>
       </div>

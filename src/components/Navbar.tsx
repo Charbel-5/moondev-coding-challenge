@@ -3,12 +3,16 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { usePathname } from 'next/navigation';
 import { useRouter } from 'next/navigation';
-import { FiLogOut } from 'react-icons/fi';
+import { FiLogOut, FiMenu, FiX } from 'react-icons/fi';
+import { Button } from './ui/Button';
+import { useState } from 'react';
+import Image from 'next/image';
 
 export default function Navbar() {
   const pathname = usePathname();
   const { user, signOut } = useAuth();
   const router = useRouter();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Hide navbar on login page
   if (pathname === '/login' || !user) {
@@ -30,28 +34,74 @@ export default function Navbar() {
   };
 
   return (
-    <div className="bg-white shadow-sm border-b">
+    <nav className="bg-white dark:bg-gray-900 shadow-soft sticky top-0 z-10 border-b border-neutral-100 dark:border-neutral-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16 items-center">
+        <div className="flex justify-between h-16">
+          {/* Logo and Brand Name */}
           <div className="flex-shrink-0 flex items-center">
-            <span className="text-xl font-semibold">MoonDev Challenge</span>
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-bold text-lg">
+                M
+              </div>
+              <span className="text-xl font-semibold bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">
+                MoonDev
+              </span>
+              <span className="text-neutral-600 dark:text-neutral-300 hidden sm:inline-block">Challenge</span>
+            </div>
           </div>
           
-          <div className="flex items-center gap-4">
-            <div className="text-sm text-gray-500">
-              {user?.email} ({user?.role})
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center space-x-4">
+            <div className="text-sm text-neutral-500 dark:text-neutral-400 bg-neutral-50 dark:bg-neutral-800 px-3 py-1 rounded-full border border-neutral-200 dark:border-neutral-700">
+              {user?.email} <span className="text-primary">({user?.role})</span>
             </div>
             
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={handleLogout}
-              className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              className="text-neutral-700 dark:text-neutral-300"
             >
-              <FiLogOut className="mr-2 -ml-1 h-4 w-4" />
+              <FiLogOut className="mr-2 h-4 w-4" />
               Logout
+            </Button>
+          </div>
+          
+          {/* Mobile Menu Button */}
+          <div className="md:hidden flex items-center">
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="inline-flex items-center justify-center p-2 rounded-md text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white focus:outline-none"
+              aria-expanded="false"
+            >
+              <span className="sr-only">Open main menu</span>
+              {mobileMenuOpen ? (
+                <FiX className="block h-6 w-6" aria-hidden="true" />
+              ) : (
+                <FiMenu className="block h-6 w-6" aria-hidden="true" />
+              )}
             </button>
           </div>
         </div>
       </div>
-    </div>
+
+      {/* Mobile Menu */}
+      {mobileMenuOpen && (
+        <div className="md:hidden bg-white dark:bg-gray-900 border-b border-neutral-100 dark:border-neutral-800">
+          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+            <div className="block px-3 py-2 text-sm text-neutral-500 dark:text-neutral-400">
+              {user?.email} <span className="text-primary">({user?.role})</span>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center px-3 py-2 rounded-md text-base font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+            >
+              <FiLogOut className="mr-2 h-4 w-4" />
+              Logout
+            </button>
+          </div>
+        </div>
+      )}
+    </nav>
   );
 }
