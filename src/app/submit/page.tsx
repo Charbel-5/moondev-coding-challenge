@@ -318,107 +318,127 @@ export default function SubmitPage() {
           }}
         />
       ) : (
-        <div className="bg-white shadow rounded-lg p-6">
-          <div className="flex justify-between items-start mb-6">
-            <h2 className="text-xl font-semibold">Your Submission</h2>
+        <div className="bg-white shadow-lg rounded-xl p-8">
+          <div className="flex justify-between items-start mb-8">
+            <h2 className="text-2xl font-semibold">Your Submission</h2>
             <button 
               onClick={() => setIsEditing(true)}
-              className="text-blue-500 hover:text-blue-700 flex items-center"
+              className="flex items-center text-primary px-3 py-2 rounded-md hover:bg-blue-50 transition-colors"
             >
-              <FiEdit className="mr-1" /> Edit
+              <FiEdit className="mr-2" /> Edit Submission
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            <div>
-              <p className="text-sm text-gray-500 mb-1">Full Name</p>
-              <p className="font-medium">{submission.full_name}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 mb-1">Email</p>
-              <p className="font-medium">{submission.email}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 mb-1">Phone</p>
-              <p className="font-medium">{submission.phone}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 mb-1">Location</p>
-              <p className="font-medium">{submission.location}</p>
+          <div className="mb-8">
+            <h3 className="text-lg font-medium mb-4 text-gray-800 border-b pb-2">Personal Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Full Name</p>
+                <p className="font-medium">{submission.full_name}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Email</p>
+                <p className="font-medium">{submission.email}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Phone</p>
+                <p className="font-medium">{submission.phone}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Location</p>
+                <p className="font-medium">{submission.location}</p>
+              </div>
             </div>
           </div>
           
-          <div className="mb-6">
-            <p className="text-sm text-gray-500 mb-1">Hobbies</p>
-            <p>{submission.hobbies}</p>
+          <div className="mb-8">
+            <h3 className="text-lg font-medium mb-4 text-gray-800 border-b pb-2">About You</h3>
+            <div>
+              <p className="text-sm text-gray-500 mb-1">Hobbies</p>
+              <p className="text-gray-700 whitespace-pre-wrap">{submission.hobbies}</p>
+            </div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            {/* Display profile picture */}
-            <div>
-              <p className="text-sm text-gray-500 mb-1">Profile Picture</p>
-              {isLoadingUrls ? (
-                <div className="w-40 h-40 bg-gray-100 flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-primary"></div>
-                </div>
-              ) : submission.profile_picture ? (
-                <div className="aspect-square w-40 h-40 rounded-lg overflow-hidden relative">
-                  {profileImageUrl ? (
-                    <Image 
-                      src={profileImageUrl} 
-                      alt="Profile" 
-                      fill
-                      className="object-cover"
-                    />
-                  ) : (
-                    <div className="flex items-center justify-center h-full bg-gray-100 text-gray-400">
-                      Failed to load image
+          <div className="mb-8">
+            <h3 className="text-lg font-medium mb-4 text-gray-800 border-b pb-2">Uploaded Files</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Display profile picture */}
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-3">Profile Picture</p>
+                {isLoadingUrls ? (
+                  <div className="flex items-center justify-center h-48 bg-gray-100 rounded-lg">
+                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+                  </div>
+                ) : submission.profile_picture ? (
+                  <div className="relative bg-gray-50 border border-gray-200 rounded-lg p-3 h-48">
+                    <div className="w-full h-full relative rounded-md overflow-hidden">
+                      {profileImageUrl ? (
+                        <Image 
+                          src={profileImageUrl} 
+                          alt="Profile" 
+                          fill
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="flex items-center justify-center h-full bg-gray-100 text-gray-400">
+                          Failed to load image
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              ) : (
-                <p className="text-sm italic text-gray-400">No profile picture</p>
-              )}
-            </div>
-            
-            {/* Display source code link */}
-            <div>
-              <p className="text-sm text-gray-500 mb-1">Source Code</p>
-              {isLoadingUrls ? (
-                <div className="flex items-center h-8">
-                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-primary mr-2"></div>
-                  <span className="text-gray-400">Loading...</span>
-                </div>
-              ) : submission.source_code ? (
-                <div className="flex flex-col space-y-2">
-                  {sourceCodeUrl ? (
-                    <a 
-                      href={sourceCodeUrl} 
-                      download
-                      className="flex items-center px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors w-fit"
-                    >
-                      <FiDownload className="mr-2" />
-                      Download Source Code
-                    </a>
-                  ) : (
-                    // Fallback to direct download
-                    <a 
-                      href={getDirectDownloadUrl(submission.source_code)}
-                      download
-                      className="flex items-center px-3 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors w-fit"
-                    >
-                      <FiDownload className="mr-2" />
-                      Direct Download
-                    </a>
-                  )}
-                </div>
-              ) : (
-                <p className="text-sm italic text-gray-400">No source code uploaded</p>
-              )}
+                  </div>
+                ) : (
+                  <div className="h-40 bg-gray-100 rounded-lg flex items-center justify-center">
+                    <p className="text-sm italic text-gray-400">No profile picture</p>
+                  </div>
+                )}
+              </div>
+              
+              {/* Display source code link */}
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-3">Source Code</p>
+                {isLoadingUrls ? (
+                  <div className="flex items-center h-48 bg-gray-100 rounded-lg justify-center">
+                    <div className="flex items-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary mr-2"></div>
+                      <span className="text-gray-400">Loading...</span>
+                    </div>
+                  </div>
+                ) : submission.source_code ? (
+                  <div className="h-48 bg-gray-50 border border-gray-200 rounded-lg p-6 flex flex-col items-center justify-center">
+                    <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center mb-4">
+                      <FiDownload className="text-primary" size={24} />
+                    </div>
+                    {sourceCodeUrl ? (
+                      <a 
+                        href={sourceCodeUrl} 
+                        download
+                        className="flex items-center px-4 py-3 bg-primary text-white rounded-lg hover:bg-primary-600 transition-colors"
+                      >
+                        <FiDownload className="mr-2" />
+                        Download Source Code
+                      </a>
+                    ) : (
+                      <a 
+                        href={getDirectDownloadUrl(submission.source_code)}
+                        download
+                        className="flex items-center px-4 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                      >
+                        <FiDownload className="mr-2" />
+                        Direct Download
+                      </a>
+                    )}
+                  </div>
+                ) : (
+                  <div className="h-40 bg-gray-100 rounded-lg flex items-center justify-center">
+                    <p className="text-sm italic text-gray-400">No source code uploaded</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
           
-          <div className="mt-8">
+          <div className="mt-8 pt-6 border-t">
+            <h3 className="text-lg font-medium mb-4 text-gray-800">Submission Status</h3>
             <SubmissionStatus submission={submission} />
           </div>
         </div>
