@@ -124,8 +124,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  // In your AuthContext.tsx file, update the signOut function:
-
   const signOut = async () => {
     try {
       setIsLoading(true);
@@ -136,7 +134,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (typeof window !== 'undefined') {
         localStorage.removeItem('user');
         localStorage.removeItem('lastActivity');
-        // Add any other items you want to clear
       }
     } catch (error) {
       console.error('Error signing out:', error);

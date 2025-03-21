@@ -87,14 +87,6 @@ export default function SubmissionStatus({ submission }: SubmissionStatusProps) 
       return null;
     }
   }
-
-  // Helper function for direct download
-  const getDirectDownloadUrl = (url: string) => {
-    const parsedUrl = parseStorageUrl(url);
-    if (!parsedUrl) return null;
-    
-    return `/api/storage?action=download&bucket=${parsedUrl.bucket}&path=${encodeURIComponent(parsedUrl.path)}`;
-  };
   
   return (
     <div className="bg-white shadow-md rounded-lg p-6">      

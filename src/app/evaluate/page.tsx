@@ -6,7 +6,7 @@ import { useEvaluatorAccess } from '@/hooks/useRoleAccess';
 import { DeveloperSubmission } from '@/types/evaluation';
 import EvaluationForm from './EvaluationForm';
 import SubmissionCard from './SubmissionCard';
-import { FiSearch } from 'react-icons/fi';
+import { FiSearch, FiChevronLeft, FiUser } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
 export default function EvaluatePage() {
@@ -20,6 +20,9 @@ export default function EvaluatePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedbackText, setFeedbackText] = useState('');
   const [submissionId, setSubmissionId] = useState('');
+  
+  // Mobile-specific state
+  const [showListView, setShowListView] = useState(true);
 
   // Fetch all submissions
   useEffect(() => {
@@ -110,102 +113,23 @@ export default function EvaluatePage() {
     if (selectedSubmission?.id === updatedSubmission.id) {
       setSelectedSubmission(updatedSubmission);
     }
-  };
-
-  const updateSubmissionWithEmail = async (
-    id: string, 
-    feedback: string, 
-    status: 'accepted' | 'rejected'
-  ) => {
-    setSubmitting(true);
     
-    try {
-      // First update the submission in the database
-      const { error } = await supabase
-        .from('submissions')
-        .update({ feedback, status })
-        .eq('id', id);
-        
-      if (error) throw error;
-      
-      // Then send the email notification
-      const emailResponse = await fetch('/api/email-notification', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ submissionId: id }),
-      });
-      
-      if (!emailResponse.ok) {
-        const errorData = await emailResponse.json();
-        console.error('Email notification failed:', errorData);
-        toast.error('Submission updated but email notification failed');
-        return;
-      }
-      
-      toast.success(`Submission ${status === 'accepted' ? 'accepted' : 'rejected'} and email sent`);
-    } catch (error) {
-      console.error('Error updating submission:', error);
-      toast.error('Failed to update submission');
-    } finally {
-      setSubmitting(false);
+    // On mobile, return to the list view after submission
+    if (window.innerWidth < 768) {
+      setShowListView(true);
+    }
+  };
+  
+  // Function to handle selecting an applicant on mobile
+  const handleSelectSubmission = (submission: DeveloperSubmission) => {
+    setSelectedSubmission(submission);
+    
+    // On mobile, switch to detail view when selecting an applicant
+    if (window.innerWidth < 768) {
+      setShowListView(false);
     }
   };
 
-  /*const sendEmailNotification = async (submissionId: string) => {
-    try {
-      const response = await fetch('/api/email-notification', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ submissionId }),
-      });
-  
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Email notification failed:', errorData);
-        toast.error('Email notification failed to send');
-        return false;
-      }
-  
-      return true;
-    } catch (error) {
-      console.error('Error sending email notification:', error);
-      toast.error('Failed to send email notification');
-      return false;
-    }
-  };
-  */
-  const handleDecision = async (status: 'accepted' | 'rejected') => {
-    setIsSubmitting(true);
-    
-    try {
-      // First update the submission in the database
-      const { error } = await supabase
-        .from('submissions')
-        .update({ 
-          status,
-          feedback: feedbackText,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', submissionId);
-        
-      if (error) throw error;
-      
-      // Then send the email notification
-      //const emailSent = await sendEmailNotification(submissionId);
-      
-      toast.success(`Application ${status === 'accepted' ? 'accepted' : 'rejected'} successfully and email sent`);
-    } catch (error) {
-      console.error('Error updating submission:', error);
-      toast.error('Failed to update submission status');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-  
   // Show loading state
   if (authLoading || (isLoading && submissions.length === 0)) {
     return (
@@ -224,7 +148,82 @@ export default function EvaluatePage() {
     <div className="container mx-auto p-4 md:p-6">
       <h1 className="text-2xl font-bold mb-6">Candidate Evaluations</h1>
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Mobile View */}
+      <div className="lg:hidden">
+        {showListView ? (
+          <>
+            <div className="mb-4">
+              <div className="relative">
+                <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search candidates..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2 pb-16">
+              {filteredSubmissions.length === 0 ? (
+                <p className="text-center py-6 text-gray-500">
+                  {isLoading ? 'Loading submissions...' : 'No submissions found'}
+                </p>
+              ) : (
+                filteredSubmissions.map((submission) => (
+                  <SubmissionCard
+                    key={submission.id}
+                    submission={submission}
+                    isSelected={selectedSubmission?.id === submission.id}
+                    onClick={() => handleSelectSubmission(submission)}
+                  />
+                ))
+              )}
+            </div>
+            
+            {/* Selected candidate status indicator */}
+            {selectedSubmission && (
+              <div 
+                className="fixed bottom-6 right-6 bg-primary text-white rounded-full p-3 shadow-lg flex items-center justify-center z-20"
+                onClick={() => setShowListView(false)}
+              >
+                <FiUser className="h-5 w-5 mr-2" />
+                <span>View Selected</span>
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            {/* Back button */}
+            <button 
+              className="mb-4 flex items-center text-primary hover:text-primary-dark transition-colors"
+              onClick={() => setShowListView(true)}
+            >
+              <FiChevronLeft className="mr-1" />
+              <span>Back to List</span>
+            </button>
+            
+            {selectedSubmission ? (
+              <EvaluationForm 
+                submission={selectedSubmission} 
+                onClose={() => {
+                  setSelectedSubmission(null);
+                  setShowListView(true);
+                }}
+                onUpdate={handleSubmissionUpdate} 
+              />
+            ) : (
+              <div className="bg-white p-6 rounded-lg shadow-md flex flex-col items-center justify-center h-64 text-center">
+                <p>Please select a candidate to evaluate</p>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Desktop View (unchanged) */}
+      <div className="hidden lg:grid lg:grid-cols-3 lg:gap-6">
         <div className="lg:col-span-1">
           <div className="mb-4">
             <div className="relative">

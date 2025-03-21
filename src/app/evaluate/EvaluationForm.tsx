@@ -6,7 +6,7 @@ import { toast } from 'react-hot-toast';
 import { FiDownload, FiX, FiThumbsUp, FiThumbsDown } from 'react-icons/fi';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/utils/supabase'; // Import the Supabase client directly
+import { supabase } from '@/utils/supabase';
 
 interface EvaluationFormProps {
   submission: DeveloperSubmission;
@@ -15,7 +15,6 @@ interface EvaluationFormProps {
 }
 
 export default function EvaluationForm({ submission, onClose, onUpdate }: EvaluationFormProps) {
-  // Initialize feedback with submission.feedback or empty string
   const [feedback, setFeedback] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
@@ -226,6 +225,7 @@ export default function EvaluationForm({ submission, onClose, onUpdate }: Evalua
       </div>
       
       <div className="p-6">
+        {/* Developer Information */}
         <div className="mb-6">
           <h3 className="text-lg font-medium mb-2">Developer Information</h3>
           <div className="bg-gray-50 rounded-lg p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -314,22 +314,41 @@ export default function EvaluationForm({ submission, onClose, onUpdate }: Evalua
           />
         </div>
         
+        {/* Buttons are now stacked on mobile but side-by-side on desktop */}
         <div className="flex flex-col sm:flex-row gap-4 justify-end mt-6">
           <button
             className="btn btn-error py-3 text-base flex-1 items-center justify-center h-14"
             onClick={() => handleSubmit('rejected')}
             disabled={isSubmitting}
           >
-            <FiThumbsDown className="mr-3 h-5 w-5" />
-            We Are Sorry
+            {isSubmitting ? (
+              <div className="flex items-center justify-center">
+                <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-2"></div>
+                <span>Processing...</span>
+              </div>
+            ) : (
+              <>
+                <FiThumbsDown className="mr-3 h-5 w-5" />
+                We Are Sorry
+              </>
+            )}
           </button>
           <button
             className="btn btn-success py-3 text-base flex-1 items-center justify-center h-14"
             onClick={() => handleSubmit('accepted')}
             disabled={isSubmitting}
           >
-            <FiThumbsUp className="mr-3 h-5 w-5" />
-            Welcome to the Team
+            {isSubmitting ? (
+              <div className="flex items-center justify-center">
+                <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white mr-2"></div>
+                <span>Processing...</span>
+              </div>
+            ) : (
+              <>
+                <FiThumbsUp className="mr-3 h-5 w-5" />
+                Welcome to the Team
+              </>
+            )}
           </button>
         </div>
       </div>

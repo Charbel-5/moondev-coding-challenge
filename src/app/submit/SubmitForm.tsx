@@ -205,7 +205,7 @@ export default function SubmitForm({ existingSubmission, onSuccess }: SubmitForm
       accept: {
         'image/*': ['.jpg', '.jpeg', '.png', '.gif']
       },
-      maxSize: 10 * 1024 * 1024, // 10MB
+      maxSize: 5 * 1024 * 1024, // 5MB
       onDrop: (acceptedFiles) => {
         if (acceptedFiles.length > 0) {
           const file = acceptedFiles[0];
@@ -273,7 +273,7 @@ export default function SubmitForm({ existingSubmission, onSuccess }: SubmitForm
                 or click to select a file
               </p>
               <p className="text-xs text-gray-400 mt-2">
-                JPEG, PNG or GIF up to 10MB
+                JPEG, PNG or GIF up to 5MB
               </p>
               {hasExistingProfilePicture && (
                 <p className="text-primary text-sm mt-2 font-medium">

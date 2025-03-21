@@ -67,7 +67,7 @@ serve(async (req: Request) => {
       },
     });
     
-    // Streamlined HTML with better design principles
+    // Streamlined HTML with good design principles
     const html = `<!DOCTYPE html>
 <html>
 <head>
