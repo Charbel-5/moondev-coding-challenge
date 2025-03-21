@@ -20,9 +20,16 @@ export default function LogoutButton({
 
   const handleLogout = async () => {
     try {
-      await signOut();
-      toast.success('Logged out successfully');
+      // First, navigate to login page
       router.push('/login');
+      
+      // After navigation is initiated, show success message
+      toast.success('Logged out successfully');
+      
+      // Small delay to ensure navigation has started before clearing auth state
+      setTimeout(async () => {
+        await signOut();
+      }, 100);
     } catch (error) {
       console.error('Logout error:', error);
       toast.error('Failed to log out');

@@ -7,6 +7,7 @@ import { FiLogOut, FiMenu, FiX } from 'react-icons/fi';
 import { Button } from './ui/Button';
 import { useState } from 'react';
 import Image from 'next/image';
+import { toast } from 'react-toastify';
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -24,12 +25,16 @@ export default function Navbar() {
       // Navigate first, then sign out to avoid the "Please login" message
       router.push('/login');
       
+      // Show success message
+      toast.success('Logged out successfully');
+      
       // Small timeout to ensure navigation completes first
       setTimeout(async () => {
         await signOut();
       }, 100);
     } catch (error) {
       console.error('Error logging out:', error);
+      toast.error('Failed to log out');
     }
   };
 
