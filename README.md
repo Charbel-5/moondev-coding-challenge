@@ -27,55 +27,55 @@ A Next.js application built for the MoonDev march 2025 coding challenge. This pl
 ### Installation
 
 1. Clone this repository
-   ```bash
-        git clone https://github.com/Charbel-5/moondev-march-coding-challenge.git
-        cd moondev-march-coding-challenge
-    ```
+```bash
+git clone https://github.com/Charbel-5/moondev-march-coding-challenge.git
+cd moondev-march-coding-challenge
+```
 
 2. Install dependencies
-    ```bash
-        npm install
-        # or
-        yarn install
-    ```
+```bash
+npm install
+# or
+yarn install
+```
 
 3. Set up environment variables
 
 ####  For Web Application
-    ```bash
-        # Create a .env.local file with:
-        NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-        NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-        SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
-        SUPABASE_URL=your_supabase_url
-    ```
+```bash
+# Create a .env.local file with:
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+SUPABASE_URL=your_supabase_url
+```
 
 ####  For Supabase Edge Function
-    ```bash
-        # Database Configuration
-        SUPABASE_DB_URL=your_supabase_db_url
+```bash
+# Database Configuration
+SUPABASE_DB_URL=your_supabase_db_url
 
-        # Supabase API Configuration
-        SUPABASE_URL=your_supabase_url
-        SUPABASE_ANON_KEY=your_supabase_anon_key
-        SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+# Supabase API Configuration
+SUPABASE_URL=your_supabase_url
+SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 
-        # Email Configuration
-        GMAIL_USER=your_gmail_address
-        GMAIL_APP_PASSWORD=your_gmail_app_password
-    ```
+# Email Configuration
+GMAIL_USER=your_gmail_address
+GMAIL_APP_PASSWORD=your_gmail_app_password
+```
 Note: For Gmail integration, you'll need to create an App Password in your Google Account security settings rather than using your regular Gmail password.
 
 4. Run the development server
-    ```bash
-        npm run dev
-        # or
-        yarn dev
-        # or
-        pnpm dev
-        # or
-        bun dev
-    ```
+```bash
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
+```
 
 5. Open [http://localhost:3000](http://localhost:3000) in your browser to see the result.
 
@@ -105,10 +105,9 @@ To configure email notifications:
 ## Deployment
 
 The application can be deployed to Vercel:
-
-    ```bash
-    vercel
-    ```
+```bash
+vercel
+```
 
 Remember to set the required environment variables in your Vercel dashboard.
 
