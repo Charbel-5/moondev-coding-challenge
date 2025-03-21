@@ -39,7 +39,21 @@ npm install
 yarn install
 ```
 
-3. Set up environment variables
+### Database Setup
+
+1. Create a new Supabase project
+2. Run the SQL setup scripts found in `Database` directory
+3. Enable email authentication in the Supabase dashboard
+
+### Email Notifications
+
+To configure email notifications:
+1. Create a Gmail account
+2. Deploy the provided edge function to your Supabase project
+3. Update environment variables with your API keys
+
+
+### Set up environment variables
 
 ####  For Web Application
 ```bash
@@ -66,7 +80,7 @@ GMAIL_APP_PASSWORD=your_gmail_app_password
 ```
 Note: For Gmail integration, you'll need to create an App Password in your Google Account security settings rather than using your regular Gmail password.
 
-4. Run the development server
+### Run the development server
 ```bash
 npm run dev
 # or
@@ -86,21 +100,6 @@ The application implements two distinct user roles:
 - **Evaluator**: Can access the evaluation dashboard
 
 Routes are protected based on user roles with automatic redirects to appropriate pages.
-
-## Local Development
-
-### Database Setup
-
-1. Create a new Supabase project
-2. Run the SQL setup scripts found in `Database` directory
-3. Enable email authentication in the Supabase dashboard
-
-### Email Notifications
-
-To configure email notifications:
-1. Create a Gmail account
-2. Deploy the provided edge function to your Supabase project
-3. Update environment variables with your API keys
 
 ## Deployment
 
